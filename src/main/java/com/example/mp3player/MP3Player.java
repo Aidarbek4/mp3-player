@@ -1,6 +1,7 @@
 package com.example.mp3player;
 
 import com.example.mp3player.models.Song;
+import com.example.mp3player.windows.AddSongWindow;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -17,7 +18,6 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -35,14 +35,11 @@ public class MP3Player extends Application {
     private int currentSongIndex = -1;
     private List<Song> songs = new ArrayList<>();
     private Slider slider;
-
-    private static final String DB_URL = "jdbc:mysql://localhost:3306/musicDB";
-    private static final String DB_USER = "root";  // Replace with your DB user
-    private static final String DB_PASSWORD = "aidarbek2004";  // Replace with your DB password
+    private Stage stage;
 
     @Override
     public void start(Stage stage) {
-        try (Connection connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD)) {
+        try (Connection connection = DatabaseConfig.getConnection()) {
             playButton = new Button("▶");
             playButton.setStyle("-fx-background-color: #00ff00; -fx-text-fill: white; -fx-font-size: 16px;");
             playButton.setOnAction(event -> togglePlayPause());
@@ -108,21 +105,41 @@ public class MP3Player extends Application {
             albumsTab.setContent(createAlbumsListView(connection));
             albumsTab.setClosable(false);
 
+
             Tab artistsTab = new Tab("Artists");
             artistsTab.setContent(createArtistsListView(connection));
             artistsTab.setClosable(false);
 
             tabPane.getTabs().addAll(songsTab, albumsTab, artistsTab);
 
-            tabPane.getStylesheets().add("data:,"
-                    + ".tab-pane .tab-header-area .tab-header-background { -fx-background-color: #000000; }"
-                    + ".tab-pane .tab-header-area .tab { -fx-background-color: #000000; -fx-text-fill: white; }"
-                    + ".tab-pane .tab-header-area .tab:selected { -fx-background-color: #000000; -fx-text-fill: #00ff00; }");
+            Button songsButton = new Button("Songs");
+            songsButton.setOnAction(event -> tabPane.getSelectionModel().select(songsTab));
+
+            Button albumsButton = new Button("Albums");
+            albumsButton.setOnAction(event -> tabPane.getSelectionModel().select(albumsTab));
+
+            Button artistsButton = new Button("Artists");
+            artistsButton.setOnAction(event -> tabPane.getSelectionModel().select(artistsTab));
+
+            HBox tabButtonsBox = new HBox(10, songsButton, albumsButton, artistsButton);
+            tabButtonsBox.setAlignment(Pos.CENTER);
+            tabButtonsBox.setPadding(new Insets(10));
 
             BorderPane root = new BorderPane();
             root.setLeft(leftBox);
             root.setCenter(tabPane);
             root.setStyle("-fx-background-color: #000000;");
+
+            Button addSongButton = new Button("Add Song");
+            //Runnable onSongAdded = null;
+            addSongButton.setOnAction(event -> showAddSongWindow());
+
+            HBox buttonBox = new HBox(10, addSongButton);
+            buttonBox.setAlignment(Pos.CENTER);
+            buttonBox.setPadding(new Insets(10));
+
+            root.setTop(tabButtonsBox);
+            root.setBottom(buttonBox);
 
             Scene scene = new Scene(root, 800, 600);
             stage.setScene(scene);
@@ -290,6 +307,9 @@ public class MP3Player extends Application {
         }
     }
 
+    private void showAddSongWindow() {
+        AddSongWindow addSongWindow = new AddSongWindow();
+    }
     public static void main(String[] args) {
         launch(args);
     }
